@@ -41,4 +41,10 @@ COPY package/run.sh \
     package/helper_scripts/check_cafile_ownership.sh \
     /usr/bin/
 
+# All files
+RUN chmod +rx /usr/bin/* && \
+    chmod -R +r /etc/kube-bench
+
+USER 65534
+
 CMD ["run.sh"]
