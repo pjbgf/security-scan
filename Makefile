@@ -1,9 +1,9 @@
 # The versions of any needed tooling/dependency should be defined here.
-KIND_VERSION ?= 0.17.0
+KIND_VERSION ?= 0.20.0
 KUBECTL_VERSION ?= 1.28.0
 KUBERNETES_VERSION ?= $(KUBECTL_VERSION)
-KUBE_BENCH_VERSION ?= 0.6.19
-SONOBUOY_VERSION ?= 0.57.0
+KUBE_BENCH_VERSION ?= 0.7.0
+SONOBUOY_VERSION ?= 0.57.1
 SONOBUOY_IMAGE ?= rancher/mirrored-sonobuoy-sonobuoy:v$(SONOBUOY_VERSION)
 
 # Include logic that can be reused across projects.
