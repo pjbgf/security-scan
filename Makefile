@@ -20,6 +20,9 @@ IMAGE = $(REPO)/security-scan:$(TAG)
 TARGET_BIN ?= build/bin/kb-summarizer
 ARCH ?= $(shell docker info --format '{{.ClientInfo.Arch}}')
 
+FULCIO_URL ?= https://fulcio.sigstore.dev
+REKOR_URL ?= https://rekor.sigstore.dev
+
 .DEFAULT_GOAL := ci
 ci: build test validate e2e ## run the targets needed to validate a PR in CI.
 
@@ -63,7 +66,9 @@ ifeq ($(IID_FILE),)
 	@echo "invalid target, use image-push-and-sign instead"; exit 1
 endif
 	$(MAKE) image-push IID_FILE_FLAG="--iidfile $(IID_FILE)"
-	$(COSIGN) sign --yes "$(REPO)/security-scan@$$(head -n 1 $(IID_FILE))"
+	$(COSIGN) sign --yes "$(REPO)/security-scan@$$(head -n 1 $(IID_FILE))" \
+		--oidc-provider=github-actions \
+		--fulcio-url=$(FULCIO_URL) --rekor-url=$(REKOR_URL)
 	rm -f $(IID_FILE)
 
 e2e: $(KIND) image-build ## run E2E tests.

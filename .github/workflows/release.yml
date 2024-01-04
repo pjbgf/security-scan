@@ -6,19 +6,21 @@ on:
     tags:
       - 'v*'
 
-# GitHub Settings:
+# GitHub Settings and example values:
 #
 # org level vars:
-#   - PUBLIC_REGISTRY:
-#   - PRIME_REGISTRY:
+#   - PUBLIC_REGISTRY: docker.io
+#   - PRIME_REGISTRY: registry.rancher.com
+#   - REKOR_URL: https://rekor.sigstore.dev
+#   - FULCIO_URL: https://fulcio.sigstore.dev
 # repo level vars:
-#   - PUBLIC_REPO:
-#   - PRIME_REPO:
+#   - PUBLIC_REPO: rancher
+#   - PRIME_REPO: rancher-prime
 # repo level secrets:
-#   - PUBLIC_REGISTRY_USERNAME:
-#   - PUBLIC_REGISTRY_PASSWORD:
-#   - PRIME_REGISTRY_USERNAME:
-#   - PRIME_REGISTRY_PASSWORD:
+#   - PUBLIC_REGISTRY_USERNAME
+#   - PUBLIC_REGISTRY_PASSWORD
+#   - PRIME_REGISTRY_USERNAME
+#   - PRIME_REGISTRY_PASSWORD
 
 jobs:
 
@@ -32,8 +34,12 @@ jobs:
       uses: docker/login-action@v3
       with:
         registry: ${{ vars.PUBLIC_REGISTRY }}
-        username: ${{ github.actor }}         # or ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
-        password: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
+        # For External registries:
+        # username: ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
+        # password: ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
+        # For GHCR, to rely on workflow credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     - name: Setup QEMU
       uses: docker/setup-qemu-action@v3
     - name: Setup Docker Buildx
@@ -49,7 +55,6 @@ jobs:
       env:
         TAG: ${{ github.ref_name }}
         REPO: ${{ vars.PUBLIC_REGISTRY }}/${{ vars.PUBLIC_REGISTRY_REPO }}
-
 
   publish-prime:
     runs-on: ubuntu-latest
@@ -79,3 +84,5 @@ jobs:
       env:
         TAG: ${{ github.ref_name }}
         REPO: ${{ vars.PRIME_REGISTRY }}/${{ vars.PRIME_REGISTRY_REPO }}
+        REKOR_URL: ${{ vars.REKOR_URL }}    # Remove to fallback to sigstore's production Rekor.
+        FULCIO_URL: ${{ vars.FULCIO_URL }}  # Remove to fallback to sigstore's production Fulcio.
