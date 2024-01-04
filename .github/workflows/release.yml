@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+# GitHub Settings:
+#
+# org level vars:
+#   - PUBLIC_REGISTRY:
+#   - PRIME_REGISTRY:
+# repo level vars:
+#   - PUBLIC_REPO:
+#   - PRIME_REPO:
+# repo level secrets:
+#   - PUBLIC_REGISTRY_USERNAME:
+#   - PUBLIC_REGISTRY_PASSWORD:
+#   - PRIME_REGISTRY_USERNAME:
+#   - PRIME_REGISTRY_PASSWORD:
+
+jobs:
+
+  publish-public:
+    runs-on: ubuntu-latest
+    permissions:    
+      packages: write # (Only needed for GHCR)
+    
+    steps:
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ vars.PUBLIC_REGISTRY }}
+        username: ${{ github.actor }}         # or ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
+        password: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
+    - name: Setup QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
+  
+    - name: Build and push all image variations
+      run: |
+        make image-push
+        TAG="${TAG}-amd64" TARGET_PLATFORMS=linux/amd64 make image-push
+        TAG="${TAG}-arm64" TARGET_PLATFORMS=linux/arm64 make image-push
+      env:
+        TAG: ${{ github.ref_name }}
+        REPO: ${{ vars.PUBLIC_REGISTRY }}/${{ vars.PUBLIC_REGISTRY_REPO }}
+
+
+  publish-prime:
+    runs-on: ubuntu-latest
+    permissions:
+      # The permissions below are solely for cosign:
+      id-token: write # To sign the provenance.
+      contents: write # To upload assets to release.
+      actions: read   # To read the workflow path.
+    
+    steps:
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ vars.PRIME_REGISTRY }}
+        username: ${{ secrets.PRIME_REGISTRY_USERNAME }}
+        password: ${{ secrets.PRIME_REGISTRY_PASSWORD }}
+    - name: Setup QEMU
+      uses: docker/setup-qemu-action@v3
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
+  
+    - name: Push and sign multi-arch manifests
+      run: |
+        make image-push-and-sign
+      env:
+        TAG: ${{ github.ref_name }}
+        REPO: ${{ vars.PRIME_REGISTRY }}/${{ vars.PRIME_REGISTRY_REPO }}
