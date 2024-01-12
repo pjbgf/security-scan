@@ -16,10 +16,6 @@ KIND = $(TOOLS_BIN)/kind
 $(KIND): ## Download kind locally if not yet downloaded.
 	$(call go-install-tool,$(KIND),sigs.k8s.io/kind@v$(KIND_VERSION))
 
-COSIGN = $(TOOLS_BIN)/cosign
-$(COSIGN): ## Download cosign locally if not yet downloaded.
-	$(call go-install-tool,$(COSIGN),github.com/sigstore/cosign/v2/cmd/cosign@latest)
-
 yamllint:
 	@yamllint --version >/dev/null 2>&1 || (echo "ERROR: yamllint is required, install it with: pip install yamllint"; exit 1)
 
