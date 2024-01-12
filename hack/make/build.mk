@@ -55,3 +55,26 @@ help: ## display Makefile's help.
 buildx-machine: ## create rancher dockerbuildx machine targeting platform defined by DEFAULT_PLATFORMS.
 	@docker buildx ls | grep rancher || \
 		docker buildx create --name=rancher --platform=$(DEFAULT_PLATFORMS) --use
+
+## Optional
+BUILDX_ARGS ?= --attest type=sbom --attest type=provenance,mode=max
+FULCIO_URL ?= https://fulcio.sigstore.dev
+REKOR_URL ?= https://rekor.sigstore.dev
+
+COSIGN = $(TOOLS_BIN)/cosign
+$(COSIGN): ## Download cosign locally if not yet downloaded.
+	$(call go-install-tool,$(COSIGN),github.com/sigstore/cosign/v2/cmd/cosign@latest)
+
+image-push-and-sign: IID_FILE=$(shell mktemp) ## push then sign image using cosign.
+image-push-and-sign:
+	$(MAKE) hack-push-and-sign IID_FILE=$(IID_FILE)
+
+hack-push-and-sign: $(COSIGN)
+ifeq ($(IID_FILE),)
+	@echo "invalid target, use image-push-and-sign instead"; exit 1
+endif
+	$(MAKE) image-push IID_FILE_FLAG="--iidfile $(IID_FILE)"
+	$(COSIGN) sign --yes "$(REPO)/security-scan@$$(head -n 1 $(IID_FILE))" \
+		--oidc-provider=github-actions \
+		--fulcio-url=$(FULCIO_URL) --rekor-url=$(REKOR_URL)
+	rm -f $(IID_FILE)
