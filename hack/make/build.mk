@@ -51,6 +51,10 @@ GO := go
 # defined in TARGET_PLATFORMS, and must be a subset of the below:
 DEFAULT_PLATFORMS := linux/amd64,linux/arm64,linux/x390s,linux/riscv64
 
+# Additional docker buildx arguments. This is mostly used to enrich
+# the generated images, with layers containing its SBOM and Provenance.
+BUILDX_ARGS ?= --attest type=sbom --attest type=provenance,mode=max
+
 .PHONY: help
 help: ## display Makefile's help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
