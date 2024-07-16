@@ -67,13 +67,19 @@ jobs:
       run: |
         IID_FILE=$(mktemp)
         IID_FILE_FLAG="--iidfile ${IID_FILE}" make image-push
-        cosign sign --oidc-provider=github-actions --yes "${IMAGE_NO_TAG}@$(head -n 1 ${IID_FILE})"
+        BUNDLE="${TAG}.bundle"
+        cosign sign --output-payload="${BUNDLE}" --oidc-provider=github-actions --yes "${IMAGE_NO_TAG}@$(head -n 1 ${IID_FILE})"
+        gh release upload "${TAG}" "${BUNDLE}"
 
         TAG="${TAG}-amd64" TARGET_PLATFORMS=linux/amd64 IID_FILE_FLAG="--iidfile ${IID_FILE}" make image-push
-        cosign sign --oidc-provider=github-actions --yes "${IMAGE_NO_TAG}@$(head -n 1 ${IID_FILE})"
+        BUNDLE="${TAG}-amd64.bundle"
+        cosign sign --output-payload="${BUNDLE}" --oidc-provider=github-actions --yes "${IMAGE_NO_TAG}@$(head -n 1 ${IID_FILE})"
+        gh release upload "${TAG}" "${BUNDLE}"
 
         TAG="${TAG}-arm64" TARGET_PLATFORMS=linux/arm64 IID_FILE_FLAG="--iidfile ${IID_FILE}" make image-push 
-        cosign sign --oidc-provider=github-actions --yes "${IMAGE_NO_TAG}@$(head -n 1 ${IID_FILE})"
+        BUNDLE="${TAG}-arm64.bundle"
+        cosign sign --output-payload="${BUNDLE}" --oidc-provider=github-actions --yes "${IMAGE_NO_TAG}@$(head -n 1 ${IID_FILE})"
+        gh release upload "${TAG}" "${BUNDLE}"
       env:
         TAG: ${{ github.ref_name }}
         REPO: ${{ secrets.PRIME_REGISTRY }}/${{ secrets.PRIME_REGISTRY_REPO }}
