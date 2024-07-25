@@ -5,62 +5,65 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: read
-  id-token: write # To sign the images.
-
 jobs:
 
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # To sign the images.
     
     steps:
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ vars.PUBLIC_REGISTRY }}
-        username: ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
-        password: ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
-    - name: Setup QEMU
-      uses: docker/setup-qemu-action@v3
-    - name: Setup Docker Buildx
-      uses: docker/setup-buildx-action@v3
     - name: Checkout code
       uses: actions/checkout@v4
-  
-    - name: Build and push all image variations
-      run: |
-        make image-push
-        TAG="${TAG}-amd64" TARGET_PLATFORMS=linux/amd64 make image-push
-        TAG="${TAG}-arm64" TARGET_PLATFORMS=linux/arm64 make image-push
-      env:
-        TAG: ${{ github.ref_name }}
-        REPO: ${{ vars.PUBLIC_REGISTRY }}/${{ vars.PUBLIC_REGISTRY_REPO }}
-
-    - name: Install Cosign
-      uses: sigstore/cosign-installer@v3.5.0
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
+    
+    - name: Publish multi-arch manifest
+      uses: ./.github/actions/rancher-publish
       with:
-        registry: ${{ secrets.PRIME_REGISTRY }}
-        username: ${{ secrets.PRIME_REGISTRY_USERNAME }}
-        password: ${{ secrets.PRIME_REGISTRY_PASSWORD }}
-    - name: Build and push Prime images
-      run: |
-        IID_FILE=$(mktemp)
-        export IID_FILE_FLAG="--iidfile ${IID_FILE}"
-        
-        make image-push
-        cosign sign --fulcio-url=${FULCIO_URL} --rekor-url=${REKOR_URL} --oidc-provider=github-actions --yes "${REPO}/security-scan@$(head -n 1 ${IID_FILE})"
+        image: security-scan
 
-        TAG="${TAG}-amd64" TARGET_PLATFORMS=linux/amd64 make image-push
-        cosign sign --fulcio-url=${FULCIO_URL} --rekor-url=${REKOR_URL} --oidc-provider=github-actions --yes "${REPO}/security-scan@$(head -n 1 ${IID_FILE})"
+        public-registry: ${{ vars.PUBLIC_REGISTRY }}
+        public-repo: ${{ vars.PUBLIC_REGISTRY_REPO }}
+        public-username: ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
+        public-password: ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
 
-        TAG="${TAG}-arm64" TARGET_PLATFORMS=linux/arm64 make image-push        
-        cosign sign --fulcio-url=${FULCIO_URL} --rekor-url=${REKOR_URL} --oidc-provider=github-actions --yes "${REPO}/security-scan@$(head -n 1 ${IID_FILE})"
-      env:
-        TAG: ${{ github.ref_name }}
-        REPO: ${{ secrets.PRIME_REGISTRY }}/${{ secrets.PRIME_REGISTRY_REPO }}
-        # https://docs.sigstore.dev/system_config/public_deployment/#staging-instance
-        FULCIO_URL: https://fulcio.sigstore.dev
-        REKOR_URL: https://rekor.sigstore.dev
+        prime-registry: ${{ secrets.PRIME_REGISTRY }}
+        prime-repo: ${{ secrets.PRIME_REGISTRY_REPO }}
+        prime-username: ${{ secrets.PRIME_REGISTRY_USERNAME }}
+        prime-password: ${{ secrets.PRIME_REGISTRY_PASSWORD }}
+
+    - name: Publish amd64 manifest
+      uses: ./.github/actions/rancher-publish
+      with:
+        image: security-scan
+        env_vars: |
+          TAG="${{ github.ref_name }}-amd64"
+          TARGET_PLATFORMS=linux/amd64
+
+        public-registry: ${{ vars.PUBLIC_REGISTRY }}
+        public-repo: ${{ vars.PUBLIC_REGISTRY_REPO }}
+        public-username: ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
+        public-password: ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
+
+        prime-registry: ${{ secrets.PRIME_REGISTRY }}
+        prime-repo: ${{ secrets.PRIME_REGISTRY_REPO }}
+        prime-username: ${{ secrets.PRIME_REGISTRY_USERNAME }}
+        prime-password: ${{ secrets.PRIME_REGISTRY_PASSWORD }}
+
+    - name: Publish arm64 manifest
+      uses: ./.github/actions/rancher-publish
+      with:
+        image: security-scan
+        env_vars: |
+          TAG="${{ github.ref_name }}-arm64"
+          TARGET_PLATFORMS=linux/arm64
+
+        public-registry: ${{ vars.PUBLIC_REGISTRY }}
+        public-repo: ${{ vars.PUBLIC_REGISTRY_REPO }}
+        public-username: ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
+        public-password: ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
+
+        prime-registry: ${{ secrets.PRIME_REGISTRY }}
+        prime-repo: ${{ secrets.PRIME_REGISTRY_REPO }}
+        prime-username: ${{ secrets.PRIME_REGISTRY_USERNAME }}
+        prime-password: ${{ secrets.PRIME_REGISTRY_PASSWORD }}
