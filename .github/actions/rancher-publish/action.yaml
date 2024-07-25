@@ -1,0 +1,121 @@
+name: publish-images
+
+inputs:
+  image:
+    description:
+    required: true
+    type: string
+
+  tag:
+    description:
+    required: true
+    type: string
+
+  platforms:
+    description:
+    type: string
+
+  push-to-public:
+    description: 
+    default: true
+    type: boolean
+  
+  public-registry:
+    description: 
+    type: string
+
+  public-repo:
+    description: 
+    type: string
+
+  public-username:
+    description: 
+    type: string
+
+  public-password:
+    description: 
+    type: string
+
+  push-to-prime:
+    description: 
+    default: true
+    type: boolean
+
+  prime-registry:
+    description: 
+    type: string
+
+  prime-repo:
+    description: 
+    type: string
+
+  prime-username:
+    description: 
+    type: string
+
+  prime-password:
+    description: 
+    type: string
+
+  make-target:
+    description:
+    default: push-image
+    type: string
+
+runs:
+  using: composite
+
+  steps:
+  # Login to all registries before starting the pushing process.
+  # Short-circuit if either fails. This should decrease the likelihood
+  # of one registry getting updated while the other didn't.
+  - name: Login to registry [DockerHub]
+    if: ${{ inputs.push-to-public }}
+    uses: docker/login-action@v3
+    with:
+      registry: ${{ inputs.public-registry }}
+      username: ${{ inputs.public-username }}
+      password: ${{ inputs.public-password }}
+
+  - name: Login to registry [Prime]
+    if: ${{ inputs.push-to-prime }}
+    uses: docker/login-action@v3
+    with:
+      registry: ${{ inputs.prime-registry }}
+      username: ${{ inputs.prime-username }}
+      password: ${{ inputs.prime-password }}
+
+  - name: Setup QEMU
+    uses: docker/setup-qemu-action@v3
+  - name: Setup Docker Buildx
+    uses: docker/setup-buildx-action@v3
+  - name: Install Cosign
+    uses: sigstore/cosign-installer@v3.5.0
+
+  - name: Build and push image [DockerHub]
+    shell: bash
+    if: ${{ inputs.push-to-public }}
+    run: |
+      make ${{ inputs.make-target }}
+    env:
+      TAG: ${{ inputs.tag }}
+      TARGET_PLATFORMS: ${{ inputs.platforms }}
+      REPO: ${{ inputs.public-registry }}/${{ inputs.public-repo }}
+
+  - name: Build and push image [Prime]
+    shell: bash
+    if: ${{ inputs.push-to-prime }}
+    run: |
+      IID_FILE=$(mktemp)
+      export IID_FILE_FLAG="--iidfile ${IID_FILE}"
+      
+      make ${{ inputs.make-target }}
+      cosign sign --fulcio-url=${FULCIO_URL} --rekor-url=${REKOR_URL} --oidc-provider=github-actions --yes "${REPO}/${{ inputs.image }}@$(head -n 1 ${IID_FILE})"
+    env:
+      TAG: ${{ inputs.tag }}
+      TARGET_PLATFORMS: ${{ inputs.platforms }}
+      REPO: ${{ inputs.prime-registry }}/${{ inputs.prime-repo }}
+      # Lines below are for test only and will be removed for final version.
+      # https://docs.sigstore.dev/system_config/public_deployment/#staging-instance
+      FULCIO_URL: https://fulcio.sigstore.dev
+      REKOR_URL: https://rekor.sigstore.dev
