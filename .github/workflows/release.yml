@@ -18,10 +18,6 @@ jobs:
     
     strategy:
       matrix:
-        # For sequential execution, to leverage both docker buildx
-        # caching and to avoid each job having to push the same layers
-        # to the target registry.
-        max-parallel: 1
         include:
           # Three images are created:
           # - Multi-arch manifest for both amd64 and arm64
