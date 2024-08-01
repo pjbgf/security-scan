@@ -37,15 +37,32 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Load Secrets from Vault
-        uses: rancher-eio/read-vault-secrets@main
-        with:
-          secrets: |
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
-            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
-            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
-            secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
+      # - name: Load Secrets from Vault
+      #   uses: rancher-eio/read-vault-secrets@main
+      #   with:
+      #     secrets: |
+      #       secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials username | DOCKER_USERNAME ;
+      #       secret/data/github/repo/${{ github.repository }}/dockerhub/rancher/credentials password | DOCKER_PASSWORD ;
+      #       secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials registry | PRIME_REGISTRY ;
+      #       secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials username | PRIME_REGISTRY_USERNAME ;
+      #       secret/data/github/repo/${{ github.repository }}/rancher-prime-registry/credentials password | PRIME_REGISTRY_PASSWORD
+
+      # - name: Publish manifest
+      #   uses: rancher/ecm-distro-tools/actions/publish-image@master
+      #   with:
+      #     image: security-scan
+      #     tag: ${{ github.ref_name }}${{ matrix.tag-suffix }}
+      #     platforms: ${{ matrix.platforms }}
+
+      #     public-registry: docker.io
+      #     public-repo: rancher
+      #     public-username: ${{ env.DOCKER_USERNAME }}
+      #     public-password: ${{ env.DOCKER_PASSWORD }}
+
+      #     prime-registry: ${{ env.PRIME_REGISTRY }}
+      #     prime-repo: rancher
+      #     prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
+      #     prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
 
       - name: Publish manifest
         uses: rancher/ecm-distro-tools/actions/publish-image@master
@@ -54,12 +71,14 @@ jobs:
           tag: ${{ github.ref_name }}${{ matrix.tag-suffix }}
           platforms: ${{ matrix.platforms }}
 
-          public-registry: docker.io
-          public-repo: rancher
-          public-username: ${{ env.DOCKER_USERNAME }}
-          public-password: ${{ env.DOCKER_PASSWORD }}
+          public-registry: quay.io
+          public-repo: paulinhu
+          public-username: ${{ secrets.PUBLIC_REGISTRY_USERNAME }}
+          public-password: ${{ secrets.PUBLIC_REGISTRY_PASSWORD }}
 
-          prime-registry: ${{ env.PRIME_REGISTRY }}
-          prime-repo: rancher
-          prime-username: ${{ env.PRIME_REGISTRY_USERNAME }}
-          prime-password: ${{ env.PRIME_REGISTRY_PASSWORD }}
+          prime-registry: ${{ secrets.PRIME_REGISTRY }}
+          prime-repo: paulinhu
+          prime-username: ${{ secrets.PRIME_REGISTRY_USERNAME }}
+          prime-password: ${{ secrets.PRIME_REGISTRY_PASSWORD }}
+        env:
+          BUILDX_ARGS: --sbom=true --attest type=provenance,mode=max --cache-to type=gha --cache-from type=gha
