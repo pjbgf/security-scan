@@ -2,7 +2,6 @@
 
 set -eEx
 
-KUBEBENCH_VERBOSITY=${KUBEBENCH_VERBOSITY:-0}
 DEBUG_TIME_IN_SEC=${DEBUG_TIME_IN_SEC:-300}
 
 while test $# != 0
@@ -72,7 +71,7 @@ if [[ "${OVERRIDE_BENCHMARK_VERSION}" != "" ]]; then
       --scored \
       --nosummary \
       --noremediations \
-      --v="${KUBEBENCH_VERBOSITY}" \
+      --v=0 \
       --config-dir="${CONFIG_DIR}" \
       --benchmark "${OVERRIDE_BENCHMARK_VERSION}" \
       --json \
@@ -87,7 +86,7 @@ else
       --scored \
       --nosummary \
       --noremediations \
-      --v="${KUBEBENCH_VERBOSITY}" \
+      --v=0 \
       --config-dir "${CONFIG_DIR}" \
       --version "${RANCHER_K8S_VERSION}" \
       --json \
@@ -105,7 +104,7 @@ if [[ "${OVERRIDE_BENCHMARK_VERSION}" != "" ]]; then
       --scored \
       --nosummary \
       --noremediations \
-      --v="${KUBEBENCH_VERBOSITY}" \
+      --v=0 \
       --config-dir="${CONFIG_DIR}" \
       --benchmark "${OVERRIDE_BENCHMARK_VERSION}" \
       --json \
@@ -120,7 +119,7 @@ else
       --scored \
       --nosummary \
       --noremediations \
-      --v="${KUBEBENCH_VERBOSITY}" \
+      --v=0 \
       --config-dir="${CONFIG_DIR}" \
       --version "${RANCHER_K8S_VERSION}" \
       --json \
@@ -139,7 +138,7 @@ if [[ "${OVERRIDE_BENCHMARK_VERSION}" != "" ]]; then
       --scored \
       --nosummary \
       --noremediations \
-      --v="${KUBEBENCH_VERBOSITY}" \
+      --v=0 \
       --config-dir="${CONFIG_DIR}" \
       --benchmark "${OVERRIDE_BENCHMARK_VERSION}" \
       --json \
@@ -154,7 +153,7 @@ else
       --scored \
       --nosummary \
       --noremediations \
-      --v="${KUBEBENCH_VERBOSITY}" \
+      --v=0 \
       --config-dir="${CONFIG_DIR}" \
       --version "${RANCHER_K8S_VERSION}" \
       --json \
@@ -179,7 +178,7 @@ if [[ "${OVERRIDE_BENCHMARK_VERSION}" != "" ]]; then
           --scored \
           --nosummary \
           --noremediations \
-          --v="${KUBEBENCH_VERBOSITY}" \
+          --v=0 \
           --config-dir="${CONFIG_DIR}" \
           --benchmark "${OVERRIDE_BENCHMARK_VERSION}" \
           --json \
