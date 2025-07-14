@@ -56,6 +56,19 @@ DEFAULT_PLATFORMS := linux/amd64,linux/arm64,linux/x390s,linux/riscv64
 help: ## display Makefile's help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-buildx-machine: ## create rancher dockerbuildx machine targeting platform defined by DEFAULT_PLATFORMS.
+KUBECTL = $(TOOLS_BIN)/kubectl-$(KUBECTL_VERSION)
+$(KUBECTL):
+	@if [ ! -f $(KUBECTL) ]; then \
+		curl -L "https://dl.k8s.io/release/v$(KUBECTL_VERSION)/bin/linux/arm64/kubectl.sha256" > $(KUBECTL); \
+		echo "" >> $(KUBECTL); \
+		curl -L "https://dl.k8s.io/release/v$(KUBECTL_VERSION)/bin/linux/amd64/kubectl.sha256" >> $(KUBECTL); \
+	fi
+
+# Reduces the code duplication on Makefile by keeping all args into a single variable.
+IMAGE_ARGS = --build-arg SONOBUOY_VERSION=$(SONOBUOY_VERSION) --build-arg SONOBUOY_SUM_arm64=$(SONOBUOY_SUM_arm64) --build-arg SONOBUOY_SUM_amd64=$(SONOBUOY_SUM_amd64) \
+			--build-arg KUBE_BENCH_VERSION=$(KUBE_BENCH_VERSION) --build-arg KUBE_BENCH_SUM_arm64=$(KUBE_BENCH_SUM_arm64) --build-arg KUBE_BENCH_SUM_amd64=$(KUBE_BENCH_SUM_amd64) \
+			--build-arg KUBECTL_VERSION=$(KUBECTL_VERSION) --build-arg KUBECTL_SUM_arm64=$(shell cat $(KUBECTL) | head -n1) --build-arg KUBECTL_SUM_amd64=$(shell cat $(KUBECTL) | tail -n1)
+
+buildx-machine: $(KUBECTL) ## create rancher dockerbuildx machine targeting platform defined by DEFAULT_PLATFORMS.
 	@docker buildx ls | grep $(MACHINE) || \
 		docker buildx create --name=$(MACHINE) --platform=$(DEFAULT_PLATFORMS)
