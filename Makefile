@@ -12,6 +12,7 @@ TARGET_PLATFORMS ?= linux/amd64,linux/arm64
 REPO ?= rancher
 IMAGE = $(REPO)/security-scan:$(TAG)
 TARGET_BIN ?= build/bin/kb-summarizer
+SCAN_BIN ?= build/bin/security-scan
 ARCH ?= $(shell docker info --format '{{.ClientInfo.Arch}}')
 BUILD_ACTION = --load
 
@@ -30,6 +31,9 @@ build: # build project and output binary to TARGET_BIN.
 	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "-X main.VERSION=$(VERSION) $(LINKFLAGS)" -o $(TARGET_BIN) ./cmd/kb-summarizer/
 	$(TARGET_BIN) --version
 	sha256sum $(TARGET_BIN)
+
+	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "-X main.VERSION=$(VERSION) $(LINKFLAGS)" -o $(SCAN_BIN) ./cmd/security-scan/
+	$(SCAN_BIN) --version
 
 test-image: buildx-machine ## build the container image for all target architecures.
 	# Instead of loading image, target all platforms, effectivelly testing

@@ -100,9 +100,11 @@ RUN xx-go --wrap
 # to access the .git dir.
 ARG VERSION
 RUN VERSION=${VERSION} TARGET_BIN=/chroot/usr/bin/kb-summarizer make build
+RUN VERSION=${VERSION} SCAN_BIN=/chroot/usr/bin/security-scan make build
 
 # Ensures that the binary that was built is valid for the target platform.
 RUN xx-verify --static /chroot/usr/bin/kb-summarizer
+RUN xx-verify --static /chroot/usr/bin/security-scan
 
 # Override kube-bench cfg files without duplicating them on the final image.
 COPY package/cfg/ /chroot/etc/kube-bench/cfg/
